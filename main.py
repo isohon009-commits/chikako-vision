@@ -15,7 +15,8 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse
 from analyzer import analyze_image_bytes
 from verify import verify_visit
-from database import get_visits, get_stats
+from database import (get_visits, get_stats, get_stores, add_store, delete_store,
+                      start_work, end_work, get_attendance)
 
 app = FastAPI(title="Chikako Vision API")
 
@@ -37,6 +38,48 @@ def panel():
 def agent_app():
     """Agent ilovasi (telefonda ochiladi)."""
     return FileResponse(os.path.join(HERE, "agent.html"))
+
+
+@app.get("/stores-page")
+def stores_page():
+    """Do'konlar bazasini boshqarish (admin)."""
+    return FileResponse(os.path.join(HERE, "stores.html"))
+
+
+# ---- Do'konlar API (A) ----
+@app.get("/stores")
+def stores_list():
+    return get_stores()
+
+
+@app.post("/stores")
+async def stores_add(name: str = Form(...), lat: float = Form(...), lng: float = Form(...)):
+    add_store(name, lat, lng)
+    return {"ok": True}
+
+
+@app.delete("/stores/{store_id}")
+def stores_delete(store_id: int):
+    delete_store(store_id)
+    return {"ok": True}
+
+
+# ---- Davomat API (C) ----
+@app.post("/attendance/start")
+async def attendance_start(agent: str = Form(...), date: str = Form(...)):
+    t = start_work(agent, date)
+    return {"start_time": t}
+
+
+@app.post("/attendance/end")
+async def attendance_end(agent: str = Form(...), date: str = Form(...)):
+    t = end_work(agent, date)
+    return {"end_time": t}
+
+
+@app.get("/attendance")
+def attendance_list(date: str):
+    return get_attendance(date)
 
 
 @app.get("/stats")

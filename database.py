@@ -132,3 +132,107 @@ def get_stats():
         "avg_score": round(avg_score, 1) if avg_score else 0,
         "agents": agents,
     }
+
+
+# ============== DO'KONLAR BAZASI (A) ==============
+def init_stores():
+    conn = get_conn()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS stores (
+            id    INTEGER PRIMARY KEY AUTOINCREMENT,
+            name  TEXT,
+            lat   REAL,
+            lng   REAL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+def add_store(name, lat, lng):
+    init_stores()
+    conn = get_conn()
+    conn.execute("INSERT INTO stores (name, lat, lng) VALUES (?,?,?)", (name, lat, lng))
+    conn.commit()
+    conn.close()
+
+
+def get_stores():
+    init_stores()
+    conn = get_conn()
+    rows = conn.execute("SELECT * FROM stores ORDER BY name").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def delete_store(store_id):
+    init_stores()
+    conn = get_conn()
+    conn.execute("DELETE FROM stores WHERE id = ?", (store_id,))
+    conn.commit()
+    conn.close()
+
+
+# ============== AGENT DAVOMATI (C) ==============
+def init_attendance():
+    conn = get_conn()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS attendance (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            agent       TEXT,
+            work_date   TEXT,
+            start_time  TEXT,
+            end_time    TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+def start_work(agent, work_date):
+    init_attendance()
+    conn = get_conn()
+    # Bugun allaqachon boshlaganmi?
+    row = conn.execute(
+        "SELECT id FROM attendance WHERE agent=? AND work_date=?",
+        (agent, work_date)).fetchone()
+    now = datetime.now().strftime("%H:%M")
+    if row:
+        conn.close()
+        return now  # allaqachon boshlangan
+    conn.execute("INSERT INTO attendance (agent, work_date, start_time) VALUES (?,?,?)",
+                 (agent, work_date, now))
+    conn.commit()
+    conn.close()
+    return now
+
+
+def end_work(agent, work_date):
+    init_attendance()
+    conn = get_conn()
+    now = datetime.now().strftime("%H:%M")
+    conn.execute("UPDATE attendance SET end_time=? WHERE agent=? AND work_date=?",
+                 (now, agent, work_date))
+    conn.commit()
+    conn.close()
+    return now
+
+
+def get_attendance(work_date):
+    """Bir kungi davomat: har agent uchun boshlash, tugatish, do'konlar soni."""
+    init_attendance()
+    init_db()
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM attendance WHERE work_date=? ORDER BY start_time", (work_date,)).fetchall()
+    result = []
+    for r in rows:
+        d = dict(r)
+        # Shu kuni nechta do'konga kirdi
+        cnt = conn.execute(
+            "SELECT COUNT(DISTINCT store) FROM visits WHERE agent=? AND visit_date=?",
+            (d["agent"], work_date)).fetchone()[0]
+        d["stores_visited"] = cnt
+        result.append(d)
+    conn.close()
+    return result

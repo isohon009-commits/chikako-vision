@@ -7,66 +7,55 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#F7F6F3; --surface:#FFFFFF; --ink:#1A1A1A; --muted:#6B6B6B;
-    --red:#E0322B; --green:#1F9D5B; --amber:#E08A1E; --danger:#C0392B;
-    --border:#E8E6E1;
-    --display:'Space Grotesk',sans-serif; --body:'Inter',sans-serif;
-  }
+  :root{--bg:#F7F6F3;--surface:#FFF;--ink:#1A1A1A;--muted:#6B6B6B;--red:#E0322B;
+    --green:#1F9D5B;--amber:#E08A1E;--danger:#C0392B;--border:#E8E6E1;
+    --display:'Space Grotesk',sans-serif;--body:'Inter',sans-serif}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  body{background:var(--bg);color:var(--ink);font-family:var(--body);
-    min-height:100vh;display:flex;flex-direction:column}
-  header{background:var(--surface);border-bottom:1px solid var(--border);
-    padding:16px;text-align:center}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);min-height:100vh;display:flex;flex-direction:column}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px;text-align:center}
   .logo{font-family:var(--display);font-weight:700;font-size:20px;color:var(--red)}
   .logo small{font-family:var(--body);font-weight:500;font-size:13px;color:var(--muted);display:block;margin-top:2px}
   .screen{flex:1;padding:20px 16px;display:none;flex-direction:column}
   .screen.active{display:flex}
-
   label{font-size:13px;color:var(--muted);font-weight:500;margin-bottom:6px;display:block}
-  input[type=text],input[type=tel]{width:100%;border:1px solid var(--border);border-radius:10px;
-    padding:13px;font-size:16px;font-family:var(--body);margin-bottom:16px;background:var(--surface)}
-  input:focus{outline:none;border-color:var(--red)}
-
+  input,select{width:100%;border:1px solid var(--border);border-radius:10px;padding:13px;
+    font-size:16px;font-family:var(--body);margin-bottom:16px;background:var(--surface)}
+  input:focus,select:focus{outline:none;border-color:var(--red)}
   .btn{background:var(--red);color:#fff;border:none;border-radius:10px;padding:15px;
     font-size:16px;font-weight:600;font-family:var(--body);width:100%;cursor:pointer}
   .btn:active{opacity:.85}
   .btn:disabled{background:#ccc}
   .btn-ghost{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
-
-  .title{font-size:18px;font-weight:600;margin-bottom:16px}
-  .who{font-size:13px;color:var(--muted);margin-bottom:20px}
-
-  .photo-box{border:2px dashed var(--border);border-radius:14px;padding:36px 16px;
-    text-align:center;margin-bottom:14px;cursor:pointer;background:var(--surface)}
+  .btn-green{background:var(--green)}
+  .title{font-size:18px;font-weight:600;margin-bottom:6px}
+  .who{font-size:13px;color:var(--muted);margin-bottom:16px}
+  .worknote{font-size:13px;background:#E6F4EC;color:var(--green);padding:10px 12px;
+    border-radius:10px;margin-bottom:16px;text-align:center}
+  .photo-box{border:2px dashed var(--border);border-radius:14px;padding:36px 16px;text-align:center;
+    margin-bottom:14px;cursor:pointer;background:var(--surface)}
+  .photo-box.locked{opacity:.5;cursor:not-allowed}
   .photo-box .ic{font-size:40px;color:var(--red)}
   .photo-box .tx{font-size:14px;color:var(--muted);margin-top:8px}
   .photo-box img{max-width:100%;border-radius:10px;display:block}
   #fileInput{display:none}
-
-  .gps{font-size:13px;display:flex;align-items:center;gap:6px;margin-bottom:20px}
-  .gps.ok{color:var(--green)}
-  .gps.wait{color:var(--amber)}
-  .gps.err{color:var(--danger)}
-
-  .result-ic{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;
-    justify-content:center;margin:0 auto 18px;font-size:40px}
+  .geo{font-size:13px;display:flex;align-items:center;gap:6px;margin-bottom:16px;padding:10px 12px;border-radius:10px}
+  .geo.ok{color:var(--green);background:#E6F4EC}
+  .geo.bad{color:var(--danger);background:#FCEBEB}
+  .geo.wait{color:var(--amber);background:#FBEEDA}
+  .result-ic{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:40px}
   .result-ic.ok{background:#E6F4EC;color:var(--green)}
   .result-ic.warn{background:#FBEEDA;color:var(--amber)}
   .center{text-align:center}
-  .score-badge{display:inline-block;background:#E6F4EC;color:var(--green);
-    padding:6px 16px;border-radius:10px;font-size:14px;font-weight:600;margin-top:8px}
+  .score-badge{display:inline-block;background:#E6F4EC;color:var(--green);padding:6px 16px;border-radius:10px;font-size:14px;font-weight:600;margin-top:8px}
   .flags{text-align:left;margin-top:16px}
   .flag{font-size:13px;color:var(--danger);margin-bottom:6px}
   .spacer{flex:1}
   .loading{text-align:center;color:var(--muted);padding:30px;font-size:15px}
+  .endbtn{margin-top:14px}
 </style>
 </head>
 <body>
-
-<header>
-  <div class="logo">Chikako<small>Agent ilovasi</small></div>
-</header>
+<header><div class="logo">Chikako<small>Agent ilovasi</small></div></header>
 
 <!-- 1. KIRISH -->
 <div class="screen active" id="loginScreen">
@@ -83,20 +72,28 @@
 <div class="screen" id="visitScreen">
   <div class="title">Yangi tashrif</div>
   <div class="who" id="whoText"></div>
-  <label>Do'kon nomi</label>
-  <input type="text" id="storeName" placeholder="Qo'qon-12">
 
-  <label>Polka rasmi</label>
-  <div class="photo-box" id="photoBox" onclick="document.getElementById('fileInput').click()">
-    <div class="ic">&#128247;</div>
-    <div class="tx">Rasm olish uchun bosing</div>
+  <button class="btn btn-green" id="startBtn" onclick="startWork()">Ishni boshlash</button>
+  <div class="worknote" id="workNote" style="display:none"></div>
+
+  <div id="visitForm" style="display:none">
+    <label>Do'kon</label>
+    <select id="storeSelect" onchange="storeChanged()">
+      <option value="">— Do'konni tanlang —</option>
+    </select>
+
+    <div class="geo wait" id="geoStatus">📍 GPS aniqlanmoqda...</div>
+
+    <label>Polka rasmi</label>
+    <div class="photo-box locked" id="photoBox" onclick="tryPhoto()">
+      <div class="ic">&#128247;</div>
+      <div class="tx">Avval do'konga boring</div>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="photoPicked(event)">
+
+    <button class="btn" id="submitBtn" onclick="submitVisit()" disabled>Yuborish</button>
+    <button class="btn btn-ghost endbtn" onclick="endWork()">Ishni tugatish</button>
   </div>
-  <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="photoPicked(event)">
-
-  <div class="gps wait" id="gpsStatus">&#128205; GPS aniqlanmoqda...</div>
-
-  <div class="spacer"></div>
-  <button class="btn" id="submitBtn" onclick="submitVisit()" disabled>Yuborish</button>
 </div>
 
 <!-- 3. NATIJA -->
@@ -108,23 +105,20 @@
 
 <!-- YUKLANMOQDA -->
 <div class="screen" id="loadingScreen">
-  <div class="loading">
-    <div style="font-size:40px;margin-bottom:12px">&#9203;</div>
-    Yuborilmoqda va tekshirilmoqda...
-  </div>
+  <div class="loading"><div style="font-size:40px;margin-bottom:12px">&#9203;</div>Yuborilmoqda va tekshirilmoqda...</div>
 </div>
 
 <script>
+const RADIUS = 150; // metr — do'konga shu masofagacha yaqin bo'lsa rasm olinadi
 let agent = {name:"", phone:""};
 let photoFile = null;
 let gps = {lat:null, lng:null};
+let stores = [];
+let selectedStore = null;
+let inGeofence = false;
 
-// Saqlangan agentni tekshirish
 const saved = localStorage.getItem("chikako_agent");
-if(saved){
-  agent = JSON.parse(saved);
-  goVisit();
-}
+if(saved){ agent = JSON.parse(saved); goVisit(); }
 
 function login(){
   const name = document.getElementById("agentName").value.trim();
@@ -135,36 +129,110 @@ function login(){
   goVisit();
 }
 
-function goVisit(){
+async function goVisit(){
   document.getElementById("whoText").textContent = agent.name + " · " + (agent.phone||"");
   showScreen("visitScreen");
+  // ish boshlanganmi bugun?
+  const today = new Date().toISOString().slice(0,10);
+  const ws = localStorage.getItem("chikako_workdate");
+  if(ws === today){ showWorkStarted(localStorage.getItem("chikako_starttime")||""); }
+  await loadStores();
   getGPS();
 }
 
+async function loadStores(){
+  try{
+    stores = await fetch("/stores").then(r=>r.json());
+    const sel = document.getElementById("storeSelect");
+    sel.innerHTML = '<option value="">— Do\'konni tanlang —</option>' +
+      stores.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+  }catch(e){ stores = []; }
+}
+
+async function startWork(){
+  const today = new Date().toISOString().slice(0,10);
+  const fd = new FormData(); fd.append("agent",agent.name); fd.append("date",today);
+  try{
+    const r = await fetch("/attendance/start",{method:"POST",body:fd}).then(r=>r.json());
+    localStorage.setItem("chikako_workdate",today);
+    localStorage.setItem("chikako_starttime",r.start_time);
+    showWorkStarted(r.start_time);
+  }catch(e){ alert("Xato, qayta urinib ko'ring"); }
+}
+
+function showWorkStarted(time){
+  document.getElementById("startBtn").style.display = "none";
+  const n = document.getElementById("workNote");
+  n.style.display = "block";
+  n.textContent = "Ish boshlandi: " + time;
+  document.getElementById("visitForm").style.display = "block";
+}
+
+async function endWork(){
+  if(!confirm("Ishni tugatasizmi?")) return;
+  const today = new Date().toISOString().slice(0,10);
+  const fd = new FormData(); fd.append("agent",agent.name); fd.append("date",today);
+  try{
+    const r = await fetch("/attendance/end",{method:"POST",body:fd}).then(r=>r.json());
+    localStorage.removeItem("chikako_workdate");
+    alert("Ish tugatildi: " + r.end_time);
+    document.getElementById("startBtn").style.display = "block";
+    document.getElementById("workNote").style.display = "none";
+    document.getElementById("visitForm").style.display = "none";
+  }catch(e){ alert("Xato, qayta urinib ko'ring"); }
+}
+
 function getGPS(){
-  const el = document.getElementById("gpsStatus");
-  el.className = "gps wait";
-  el.innerHTML = "&#128205; GPS aniqlanmoqda...";
-  if(!navigator.geolocation){
-    el.className = "gps err";
-    el.innerHTML = "&#128205; GPS qo'llab-quvvatlanmaydi";
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      gps.lat = pos.coords.latitude;
-      gps.lng = pos.coords.longitude;
-      el.className = "gps ok";
-      el.innerHTML = "&#128205; GPS biriktirildi";
-      checkReady();
-    },
-    err => {
-      el.className = "gps err";
-      el.innerHTML = "&#128205; GPS ruxsati berilmadi (qayta urinish uchun bosing)";
-      el.onclick = getGPS;
-    },
-    {enableHighAccuracy:true, timeout:10000}
+  if(!navigator.geolocation){ setGeo("bad","GPS qo'llab-quvvatlanmaydi"); return; }
+  navigator.geolocation.watchPosition(
+    pos => { gps.lat=pos.coords.latitude; gps.lng=pos.coords.longitude; checkGeofence(); },
+    err => { setGeo("bad","GPS ruxsati berilmadi"); },
+    {enableHighAccuracy:true, timeout:15000, maximumAge:5000}
   );
+}
+
+function storeChanged(){
+  const id = document.getElementById("storeSelect").value;
+  selectedStore = stores.find(s=>String(s.id)===id) || null;
+  checkGeofence();
+}
+
+function distance(lat1,lng1,lat2,lng2){
+  const R=6371000, p1=lat1*Math.PI/180, p2=lat2*Math.PI/180;
+  const dphi=(lat2-lat1)*Math.PI/180, dlam=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dphi/2)**2 + Math.cos(p1)*Math.cos(p2)*Math.sin(dlam/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function checkGeofence(){
+  const el = document.getElementById("geoStatus");
+  const box = document.getElementById("photoBox");
+  if(!gps.lat){ setGeo("wait","📍 GPS aniqlanmoqda..."); inGeofence=false; lockPhoto(); return; }
+  if(!selectedStore){ setGeo("wait","📍 Do'konni tanlang"); inGeofence=false; lockPhoto(); return; }
+  const d = Math.round(distance(gps.lat,gps.lng,selectedStore.lat,selectedStore.lng));
+  if(d <= RADIUS){
+    inGeofence = true;
+    setGeo("ok","✓ Do'kondasiz ("+d+" m) — rasm olishingiz mumkin");
+    box.classList.remove("locked");
+    box.querySelector(".tx").textContent = "Rasm olish uchun bosing";
+  } else {
+    inGeofence = false;
+    setGeo("bad","✗ Do'kondan "+d+" m uzoqda — yaqinroq boring");
+    lockPhoto();
+  }
+}
+
+function lockPhoto(){
+  const box = document.getElementById("photoBox");
+  box.classList.add("locked");
+  if(!photoFile) box.querySelector(".tx").textContent = "Avval do'konga boring";
+}
+
+function setGeo(cls,txt){ const el=document.getElementById("geoStatus"); el.className="geo "+cls; el.textContent=txt; }
+
+function tryPhoto(){
+  if(!inGeofence){ alert("Rasm olish uchun do'kon joyiga boring"); return; }
+  document.getElementById("fileInput").click();
 }
 
 function photoPicked(e){
@@ -172,79 +240,64 @@ function photoPicked(e){
   if(!file) return;
   photoFile = file;
   const reader = new FileReader();
-  reader.onload = ev => {
-    document.getElementById("photoBox").innerHTML =
-      '<img src="'+ev.target.result+'" alt="polka">';
-  };
+  reader.onload = ev => { document.getElementById("photoBox").innerHTML = '<img src="'+ev.target.result+'" alt="polka">'; };
   reader.readAsDataURL(file);
-  checkReady();
-}
-
-function checkReady(){
-  document.getElementById("submitBtn").disabled = !(photoFile && gps.lat);
+  document.getElementById("submitBtn").disabled = false;
 }
 
 async function submitVisit(){
-  const store = document.getElementById("storeName").value.trim();
-  if(!store){ alert("Do'kon nomini kiriting"); return; }
+  if(!selectedStore){ alert("Do'konni tanlang"); return; }
   if(!photoFile){ alert("Rasm oling"); return; }
-
   showScreen("loadingScreen");
-
   const fd = new FormData();
   fd.append("file", photoFile);
   fd.append("photo_lat", gps.lat);
   fd.append("photo_lng", gps.lng);
+  fd.append("store_lat", selectedStore.lat);
+  fd.append("store_lng", selectedStore.lng);
   fd.append("agent", agent.name);
-  fd.append("store", store);
+  fd.append("store", selectedStore.name);
   fd.append("date", new Date().toISOString().slice(0,10));
-
   try{
     const res = await fetch("/verify", {method:"POST", body:fd});
     if(!res.ok){
       let msg = "Server xatosi ("+res.status+")";
-      try{ const e = await res.json(); if(e.detail) msg = e.detail; }catch(_){}
-      showResult({error:true, message:msg});
-      return;
+      try{ const e=await res.json(); if(e.detail) msg=e.detail; }catch(_){}
+      showResult({error:true, message:msg}); return;
     }
-    const data = await res.json();
-    showResult(data);
-  }catch(err){
-    showResult({error:true});
-  }
+    showResult(await res.json());
+  }catch(err){ showResult({error:true}); }
 }
 
 function showResult(data){
   const el = document.getElementById("resultContent");
   if(data.error){
-    el.innerHTML = '<div class="result-ic warn">&#10005;</div>'+
-      '<div class="center"><div class="title">Xatolik</div>'+
-      '<div class="who">'+(data.message || "Yuborib bo\'lmadi. Internetni tekshirib qayta urinib ko\'ring.")+'</div></div>';
+    el.innerHTML = '<div class="result-ic warn">&#10005;</div><div class="center"><div class="title">Xatolik</div>'+
+      '<div class="who">'+(data.message||"Yuborib bo\'lmadi. Internetni tekshiring.")+'</div></div>';
   } else {
     const v = data.vision || {};
     const susp = data.needs_human_review;
     const flagsHtml = (data.flags && data.flags.length)
-      ? '<div class="flags">'+data.flags.map(f=>'<div class="flag">&#9888; '+f+'</div>').join('')+'</div>'
-      : '';
-    el.innerHTML =
-      '<div class="result-ic '+(susp?'warn':'ok')+'">'+(susp?'&#9888;':'&#10003;')+'</div>'+
-      '<div class="center">'+
-        '<div class="title">Yuborildi</div>'+
-        '<div class="who">Tashrif serverga jo\'natildi va tekshirildi</div>'+
-        (v.overall_score!=null ? '<div class="score-badge">Sifat: '+v.overall_score+'/10</div>' : '')+
-      '</div>'+ flagsHtml;
+      ? '<div class="flags">'+data.flags.map(f=>'<div class="flag">&#9888; '+f+'</div>').join('')+'</div>' : '';
+    el.innerHTML = '<div class="result-ic '+(susp?'warn':'ok')+'">'+(susp?'&#9888;':'&#10003;')+'</div>'+
+      '<div class="center"><div class="title">Yuborildi</div>'+
+      '<div class="who">Tashrif serverga jo\'natildi va tekshirildi</div>'+
+      (v.overall_score!=null ? '<div class="score-badge">Sifat: '+v.overall_score+'/10</div>' : '')+'</div>'+flagsHtml;
   }
   showScreen("resultScreen");
 }
 
 function newVisit(){
   photoFile = null;
-  document.getElementById("storeName").value = "";
-  document.getElementById("photoBox").innerHTML =
-    '<div class="ic">&#128247;</div><div class="tx">Rasm olish uchun bosing</div>';
+  document.getElementById("storeSelect").value = "";
+  selectedStore = null;
+  const box = document.getElementById("photoBox");
+  box.innerHTML = '<div class="ic">&#128247;</div><div class="tx">Avval do\'konga boring</div>';
+  box.classList.add("locked");
   document.getElementById("fileInput").value = "";
   document.getElementById("submitBtn").disabled = true;
-  goVisit();
+  showScreen("visitScreen");
+  checkGeofence();
 }
 
 function showScreen(id){

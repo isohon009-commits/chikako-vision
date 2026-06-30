@@ -94,11 +94,16 @@
     <span class="logo">Chikako</span>
     <span class="tagline">Savdo nazorati</span>
   </div>
-  <button class="refresh" onclick="load()">Yangilash</button>
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+    <a href="/stores-page" style="font-size:13px;text-decoration:none;color:var(--muted);padding:8px 14px;border:1px solid var(--border);border-radius:8px">Do'konlar</a>
+    <button class="refresh" onclick="load()">Yangilash</button>
+  </div>
 </header>
 
 <div class="wrap">
   <div class="stats" id="stats"></div>
+
+  <div id="attendance" style="margin-bottom:24px"></div>
 
   <div class="filters">
     <button class="tab active" data-f="all" onclick="setFilter('all')">Hammasi</button>
@@ -119,16 +124,40 @@ function setFilter(f){
 
 async function load(){
   try{
-    const [stats, visits] = await Promise.all([
+    const today = new Date().toISOString().slice(0,10);
+    const [stats, visits, attendance] = await Promise.all([
       fetch("/stats").then(r=>r.json()),
-      fetch("/visits" + (filter==="susp" ? "?suspicious=true" : "")).then(r=>r.json())
+      fetch("/visits" + (filter==="susp" ? "?suspicious=true" : "")).then(r=>r.json()),
+      fetch("/attendance?date="+today).then(r=>r.json())
     ]);
     renderStats(stats);
+    renderAttendance(attendance);
     renderVisits(visits);
   }catch(e){
     document.getElementById("list").innerHTML =
       '<div class="empty">Serverga ulanib bo\'lmadi. Server ishlayaptimi?</div>';
   }
+}
+
+function renderAttendance(rows){
+  const el = document.getElementById("attendance");
+  if(!rows || !rows.length){
+    el.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;font-size:13px;color:var(--muted)">Bugun hali hech kim ishni boshlamadi.</div>';
+    return;
+  }
+  el.innerHTML =
+    '<div style="font-size:14px;font-weight:600;margin-bottom:10px">Bugungi agentlar</div>' +
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">' +
+    rows.map(r=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)">
+        <div style="font-weight:600;font-size:14px">${esc(r.agent)}</div>
+        <div style="display:flex;gap:16px;font-size:13px;color:var(--muted)">
+          <span>Boshladi: <b style="color:var(--ink)">${esc(r.start_time||'—')}</b></span>
+          <span>Tugatdi: <b style="color:var(--ink)">${esc(r.end_time||'—')}</b></span>
+          <span>Do'konlar: <b style="color:var(--ink)">${r.stores_visited}</b></span>
+        </div>
+      </div>`).join("") +
+    '</div>';
 }
 
 function renderStats(s){
