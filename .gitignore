@@ -1,0 +1,15 @@
+# Lokal ma'lumot (Render'da diskda saqlanadi, repога kerak emas)
+visits.db
+hashes.json
+
+# Python keshi
+__pycache__/
+*.pyc
+
+# Lokal rasm fayllar
+*.jpg
+*.jpeg
+*.png
+
+# Muhit fayllari
+.env

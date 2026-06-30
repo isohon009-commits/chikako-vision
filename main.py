@@ -33,6 +33,12 @@ def panel():
     return FileResponse(os.path.join(HERE, "panel.html"))
 
 
+@app.get("/agent")
+def agent_app():
+    """Agent ilovasi (telefonda ochiladi)."""
+    return FileResponse(os.path.join(HERE, "agent.html"))
+
+
 @app.get("/stats")
 def stats():
     return get_stats()
@@ -58,10 +64,10 @@ async def analyze(file: UploadFile = File(...)):
 @app.post("/verify")
 async def verify(
     file: UploadFile = File(...),
-    photo_lat: float = Form(...),
-    photo_lng: float = Form(...),
-    store_lat: float = Form(...),
-    store_lng: float = Form(...),
+    photo_lat: float = Form(None),
+    photo_lng: float = Form(None),
+    store_lat: float = Form(None),
+    store_lng: float = Form(None),
     agent: str = Form(""),
     store: str = Form(""),
     date: str = Form(""),

@@ -42,6 +42,8 @@ def init_db():
             brand_found   INTEGER,
             real_shelf    INTEGER,
             gps_distance  REAL,
+            photo_lat     REAL,
+            photo_lng     REAL,
             is_duplicate  INTEGER,
             summary       TEXT
         )
@@ -50,7 +52,7 @@ def init_db():
     conn.close()
 
 
-def save_visit(result, agent="", store="", visit_date=""):
+def save_visit(result, agent="", store="", visit_date="", photo_lat=None, photo_lng=None):
     """verify_visit() natijasini bazaga yozadi."""
     init_db()
     v = result.get("vision", {})
@@ -61,8 +63,8 @@ def save_visit(result, agent="", store="", visit_date=""):
     conn.execute("""
         INSERT INTO visits (created_at, agent, store, visit_date, needs_review,
             flags, score, share, facings, brand_found, real_shelf,
-            gps_distance, is_duplicate, summary)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            gps_distance, photo_lat, photo_lng, is_duplicate, summary)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     """, (
         datetime.now().strftime("%Y-%m-%d %H:%M"),
         agent, store, visit_date,
@@ -74,6 +76,7 @@ def save_visit(result, agent="", store="", visit_date=""):
         1 if v.get("my_brand_found") else 0,
         1 if v.get("is_real_shelf") else 0,
         gps.get("distance_m"),
+        photo_lat, photo_lng,
         1 if dup.get("is_duplicate") else 0,
         v.get("summary_uz", ""),
     ))

@@ -209,3 +209,37 @@ https://chikako-vision.onrender.com/panel
 
 > Eslatma: birinchi deploy'dan keyin baza bo'sh bo'ladi.
 > `seed_demo` Render'da ishlamaydi — haqiqiy tashriflar `/verify` orqali keladi.
+
+---
+
+## YANGI: Agent ilovasi (web)
+
+Agentlar telefonda ochib ishlatadigan web ilova — rasm + GPS + yuborish.
+
+Yangi fayl: `agent.html` — agent ilovasi (telefonda ochiladi).
+
+### Ochish
+Render'ga joylangach, agentlar telefonida brauzerda ochadi:
+```
+https://chikako-vision.onrender.com/agent
+```
+
+Telefon ekraniga yorliq qo'ysa (Add to Home Screen), ilova kabi ochiladi.
+
+### Qanday ishlaydi
+1. Agent ism + telefon kiritadi (bir marta, keyin eslab qoladi)
+2. Do'kon nomini yozadi
+3. "Rasm olish" — kamera ochiladi, polka rasmini oladi
+4. GPS avtomatik biriktiriladi
+5. "Yuborish" — server tekshiradi, natija ko'rinadi
+6. Yuborilgan tashrif panelda darrov paydo bo'ladi
+
+### Eslatma
+- GPS uchun brauzer ruxsat so'raydi — agent "Ruxsat berish" bosishi kerak
+- Internet kerak (web ilova). Internetsiz ishlash kerak bo'lsa — keyin native (FlutterFlow)
+- Panelда har tashrifning GPS joyi "📍 Rasm olingan joyni ko'rish" havolasi bilan ko'rinadi
+
+### Hozircha yo'q (keyingi versiya)
+- Do'kon ro'yxati + koordinatalar (GPS'ni do'konga solishtirish uchun)
+- Zakaz olish (katalog, miqdor)
+- Ovozli tahlil (cho'ntakда yozish kerak bo'lsa — native)

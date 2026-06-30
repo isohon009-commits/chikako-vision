@@ -59,6 +59,7 @@ def verify_visit(image_path, photo_lat=None, photo_lng=None,
 
     # Bazaga saqlash
     if save:
-        save_visit(result, agent=agent, store=store, visit_date=date)
+        save_visit(result, agent=agent, store=store, visit_date=date,
+                   photo_lat=photo_lat, photo_lng=photo_lng)
 
     return result

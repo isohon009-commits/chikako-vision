@@ -151,6 +151,9 @@ function renderVisits(visits){
     const flagsHtml = (v.flags && v.flags.length)
       ? `<div class="flags">${v.flags.map(f=>`<div class="flag-item">${esc(f)}</div>`).join("")}</div>`
       : "";
+    const gpsHtml = (v.photo_lat && v.photo_lng)
+      ? `<a href="https://maps.google.com/?q=${v.photo_lat},${v.photo_lng}" target="_blank" style="font-size:12px;color:var(--muted);text-decoration:none;display:inline-block;margin-top:8px">📍 Rasm olingan joyni ko'rish</a>`
+      : "";
     return `
     <div class="visit ${susp?'susp':''}">
       <div class="visit-top">
@@ -171,6 +174,7 @@ function renderVisits(visits){
         <div class="shelf-pct">Polka ${share}%</div>
       </div>
       ${v.summary ? `<div class="summary">${esc(v.summary)}</div>` : ""}
+      ${gpsHtml}
       ${flagsHtml}
     </div>`;
   }).join("");
