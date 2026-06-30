@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: chikako-vision
+    runtime: python
+    plan: starter            # disk uchun Starter kerak (bepul tarifda disk yo'q)
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false          # kalitni Render panelida o'zingiz kiritasiz
+      - key: DATA_DIR
+        value: /data
+    disk:
+      name: chikako-data
+      mountPath: /data       # baza va dublikat ro'yxati shu yerda saqlanadi
+      sizeGB: 1

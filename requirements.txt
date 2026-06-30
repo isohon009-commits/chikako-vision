@@ -1,0 +1,13 @@
+# Asosiy server
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Vision provayderlari (kerakligini qoldiring)
+google-generativeai      # Gemini uchun (tavsiya)
+anthropic                # Claude uchun
+openai                   # OpenAI uchun
+
+# GPS + dublikat aniqlash uchun
+Pillow
+imagehash
