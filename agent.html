@@ -201,6 +201,12 @@ async function submitVisit(){
 
   try{
     const res = await fetch("/verify", {method:"POST", body:fd});
+    if(!res.ok){
+      let msg = "Server xatosi ("+res.status+")";
+      try{ const e = await res.json(); if(e.detail) msg = e.detail; }catch(_){}
+      showResult({error:true, message:msg});
+      return;
+    }
     const data = await res.json();
     showResult(data);
   }catch(err){
@@ -213,7 +219,7 @@ function showResult(data){
   if(data.error){
     el.innerHTML = '<div class="result-ic warn">&#10005;</div>'+
       '<div class="center"><div class="title">Xatolik</div>'+
-      '<div class="who">Yuborib bo\'lmadi. Internetni tekshirib qayta urinib ko\'ring.</div></div>';
+      '<div class="who">'+(data.message || "Yuborib bo\'lmadi. Internetni tekshirib qayta urinib ko\'ring.")+'</div></div>';
   } else {
     const v = data.vision || {};
     const susp = data.needs_human_review;

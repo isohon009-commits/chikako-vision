@@ -49,6 +49,14 @@ def init_db():
         )
     """)
     conn.commit()
+
+    # Eski bazaga yangi ustunlarni qo'shish (avtomatik migratsiya)
+    existing = [r[1] for r in conn.execute("PRAGMA table_info(visits)").fetchall()]
+    for col, typ in [("photo_lat", "REAL"), ("photo_lng", "REAL"),
+                     ("gps_distance", "REAL"), ("is_duplicate", "INTEGER")]:
+        if col not in existing:
+            conn.execute(f"ALTER TABLE visits ADD COLUMN {col} {typ}")
+    conn.commit()
     conn.close()
 
 
