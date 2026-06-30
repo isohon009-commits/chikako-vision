@@ -64,6 +64,59 @@ def stores_delete(store_id: int):
     return {"ok": True}
 
 
+@app.post("/stores/import")
+async def stores_import(file: UploadFile = File(...)):
+    """Excel'dan do'konlarni ommaviy yuklaydi (hamma eskisini almashtiradi)."""
+    import io
+    from openpyxl import load_workbook
+    from database import replace_all_stores
+
+    data = await file.read()
+    try:
+        wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Excel o'qib bo'lmadi: {e}")
+    ws = wb.active
+
+    rows = list(ws.iter_rows(values_only=True))
+    if not rows:
+        raise HTTPException(status_code=400, detail="Fayl bo'sh")
+
+    # Sarlavhadan ustunlarni topamiz
+    header = [str(c).strip().lower() if c is not None else "" for c in rows[0]]
+    def find_col(*keys):
+        for i, h in enumerate(header):
+            if any(k in h for k in keys):
+                return i
+        return None
+    name_i = find_col("назван", "nom", "name", "do'kon")
+    gps_i = find_col("gps", "координат", "koordinat")
+
+    if name_i is None or gps_i is None:
+        raise HTTPException(status_code=400,
+            detail="Kerakli ustunlar topilmadi (do'kon nomi va GPS koordinatasi)")
+
+    out, skipped = [], 0
+    for r in rows[1:]:
+        try:
+            name = r[name_i]
+            gps = r[gps_i]
+            if not name or not gps:
+                skipped += 1
+                continue
+            parts = str(gps).replace(" ", "").split(",")
+            lat, lng = float(parts[0]), float(parts[1])
+            out.append((str(name).strip(), lat, lng))
+        except Exception:
+            skipped += 1
+
+    if not out:
+        raise HTTPException(status_code=400, detail="Hech qanday koordinatali do'kon topilmadi")
+
+    replace_all_stores(out)
+    return {"imported": len(out), "skipped": skipped}
+
+
 # ---- Davomat API (C) ----
 @app.post("/attendance/start")
 async def attendance_start(agent: str = Form(...), date: str = Form(...)):

@@ -143,10 +143,26 @@ async function goVisit(){
 async function loadStores(){
   try{
     stores = await fetch("/stores").then(r=>r.json());
-    const sel = document.getElementById("storeSelect");
-    sel.innerHTML = '<option value="">— Do\'konni tanlang —</option>' +
-      stores.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
   }catch(e){ stores = []; }
+  refreshStoreOptions();
+}
+
+function refreshStoreOptions(){
+  const sel = document.getElementById("storeSelect");
+  if(selectedStore) return; // tanlangan bo'lsa, ro'yxatni buzmaymiz
+  let list = stores;
+  let nearby = false;
+  if(gps.lat && stores.length){
+    const withD = stores.map(s=>({...s, d: distance(gps.lat,gps.lng,s.lat,s.lng)}));
+    const close = withD.filter(s=>s.d <= 3000).sort((a,b)=>a.d-b.d);
+    if(close.length){ list = close; nearby = true; }
+    else { list = withD.sort((a,b)=>a.d-b.d).slice(0,50); }
+  }
+  sel.innerHTML = '<option value="">— Do\'konni tanlang —</option>' +
+    list.map(s=>{
+      const lbl = nearby ? `${s.name} (${Math.round(s.d)} m)` : s.name;
+      return `<option value="${s.id}">${lbl}</option>`;
+    }).join("");
 }
 
 async function startWork(){
@@ -185,7 +201,7 @@ async function endWork(){
 function getGPS(){
   if(!navigator.geolocation){ setGeo("bad","GPS qo'llab-quvvatlanmaydi"); return; }
   navigator.geolocation.watchPosition(
-    pos => { gps.lat=pos.coords.latitude; gps.lng=pos.coords.longitude; checkGeofence(); },
+    pos => { gps.lat=pos.coords.latitude; gps.lng=pos.coords.longitude; refreshStoreOptions(); checkGeofence(); },
     err => { setGeo("bad","GPS ruxsati berilmadi"); },
     {enableHighAccuracy:true, timeout:15000, maximumAge:5000}
   );

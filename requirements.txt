@@ -11,3 +11,4 @@ openai                   # OpenAI uchun
 # GPS + dublikat aniqlash uchun
 Pillow
 imagehash
+openpyxl

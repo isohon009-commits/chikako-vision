@@ -236,3 +236,13 @@ def get_attendance(work_date):
         result.append(d)
     conn.close()
     return result
+
+
+def replace_all_stores(rows):
+    """Hamma do'konni o'chirib, yangi ro'yxatni yozadi. rows = [(name, lat, lng), ...]"""
+    init_stores()
+    conn = get_conn()
+    conn.execute("DELETE FROM stores")
+    conn.executemany("INSERT INTO stores (name, lat, lng) VALUES (?,?,?)", rows)
+    conn.commit()
+    conn.close()

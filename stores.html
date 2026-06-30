@@ -54,6 +54,16 @@
 
 <div class="wrap">
   <div class="card">
+    <h2>Excel'dan ommaviy yuklash</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">
+      Smartup'dan olingan Excel faylni yuklang — barcha do'konlar koordinatasi bilan bir marta qo'shiladi.
+      <b>Diqqat:</b> bu eski do'konlar ro'yxatini to'liq almashtiradi.</p>
+    <input type="file" id="excelInput" accept=".xlsx,.xls" style="margin-bottom:12px">
+    <button class="btn" onclick="importExcel()">Excel'dan yuklash</button>
+    <div id="importNote" style="font-size:13px;margin-top:12px"></div>
+  </div>
+
+  <div class="card">
     <h2>Yangi do'kon qo'shish</h2>
     <label>Do'kon nomi</label>
     <input type="text" id="name" placeholder="Qo'qon-12">
@@ -73,6 +83,27 @@
 </div>
 
 <script>
+async function importExcel(){
+  const f = document.getElementById("excelInput").files[0];
+  if(!f){ alert("Excel faylni tanlang"); return; }
+  const note = document.getElementById("importNote");
+  note.textContent = "Yuklanmoqda... (1000+ do'kon bo'lsa biroz kutadi)";
+  note.style.color = "var(--muted)";
+  const fd = new FormData(); fd.append("file", f);
+  try{
+    const res = await fetch("/stores/import", {method:"POST", body:fd});
+    if(!res.ok){
+      let msg = "Xato ("+res.status+")";
+      try{ const e=await res.json(); if(e.detail) msg=e.detail; }catch(_){}
+      note.textContent = "Xatolik: " + msg; note.style.color = "var(--red)"; return;
+    }
+    const d = await res.json();
+    note.textContent = "✓ "+d.imported+" ta do'kon yuklandi" + (d.skipped? (", "+d.skipped+" tasi o'tkazib yuborildi (koordinatasiz)") : "");
+    note.style.color = "var(--green)";
+    load();
+  }catch(e){ note.textContent = "Xatolik: yuborib bo'lmadi"; note.style.color = "var(--red)"; }
+}
+
 async function load(){
   const stores = await fetch("/stores").then(r=>r.json());
   const el = document.getElementById("list");
