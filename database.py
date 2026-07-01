@@ -8,7 +8,12 @@ Jadval: visits — kim, qachon, qaysi do'kon, ball, shubhalimi.
 import os
 import json
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+# O'zbekiston vaqti (UTC+5)
+UZ = timezone(timedelta(hours=5))
+def now_uz():
+    return datetime.now(UZ)
 
 # Ma'lumot saqlanadigan papka.
 # Render'da DATA_DIR muhit o'zgaruvchisi diskni ko'rsatadi (saqlanib qoladi).
@@ -74,7 +79,7 @@ def save_visit(result, agent="", store="", visit_date="", photo_lat=None, photo_
             gps_distance, photo_lat, photo_lng, is_duplicate, summary)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     """, (
-        datetime.now().strftime("%Y-%m-%d %H:%M"),
+        now_uz().strftime("%Y-%m-%d %H:%M"),
         agent, store, visit_date,
         1 if result.get("needs_human_review") else 0,
         json.dumps(result.get("flags", []), ensure_ascii=False),
@@ -190,16 +195,17 @@ def init_attendance():
 
 
 def start_work(agent, work_date):
+    """Yangi ish seansini boshlaydi. Ochiq seans bo'lsa, o'shani qaytaradi."""
     init_attendance()
     conn = get_conn()
-    # Bugun allaqachon boshlaganmi?
-    row = conn.execute(
-        "SELECT id FROM attendance WHERE agent=? AND work_date=?",
+    now = now_uz().strftime("%H:%M")
+    # Ochiq (tugatilmagan) seans bormi?
+    open_row = conn.execute(
+        "SELECT id FROM attendance WHERE agent=? AND work_date=? AND end_time IS NULL",
         (agent, work_date)).fetchone()
-    now = datetime.now().strftime("%H:%M")
-    if row:
+    if open_row:
         conn.close()
-        return now  # allaqachon boshlangan
+        return now  # allaqachon ochiq seans bor
     conn.execute("INSERT INTO attendance (agent, work_date, start_time) VALUES (?,?,?)",
                  (agent, work_date, now))
     conn.commit()
@@ -208,34 +214,53 @@ def start_work(agent, work_date):
 
 
 def end_work(agent, work_date):
+    """Eng oxirgi ochiq seansni tugatadi."""
     init_attendance()
     conn = get_conn()
-    now = datetime.now().strftime("%H:%M")
-    conn.execute("UPDATE attendance SET end_time=? WHERE agent=? AND work_date=?",
-                 (now, agent, work_date))
-    conn.commit()
+    now = now_uz().strftime("%H:%M")
+    row = conn.execute(
+        "SELECT id FROM attendance WHERE agent=? AND work_date=? AND end_time IS NULL "
+        "ORDER BY id DESC LIMIT 1", (agent, work_date)).fetchone()
+    if row:
+        conn.execute("UPDATE attendance SET end_time=? WHERE id=?", (now, row["id"]))
+        conn.commit()
     conn.close()
     return now
 
 
 def get_attendance(work_date):
-    """Bir kungi davomat: har agent uchun boshlash, tugatish, do'konlar soni."""
+    """Bir kungi davomat: har agent uchun seanslar va do'konlar soni."""
     init_attendance()
     init_db()
     conn = get_conn()
     rows = conn.execute(
-        "SELECT * FROM attendance WHERE work_date=? ORDER BY start_time", (work_date,)).fetchall()
-    result = []
+        "SELECT * FROM attendance WHERE work_date=? ORDER BY agent, start_time",
+        (work_date,)).fetchall()
+    # Agent bo'yicha guruhlash
+    by_agent = {}
     for r in rows:
         d = dict(r)
-        # Shu kuni nechta do'konga kirdi
+        by_agent.setdefault(d["agent"], []).append(
+            {"start_time": d["start_time"], "end_time": d["end_time"]})
+    result = []
+    for agent, sessions in by_agent.items():
         cnt = conn.execute(
             "SELECT COUNT(DISTINCT store) FROM visits WHERE agent=? AND visit_date=?",
-            (d["agent"], work_date)).fetchone()[0]
-        d["stores_visited"] = cnt
-        result.append(d)
+            (agent, work_date)).fetchone()[0]
+        result.append({"agent": agent, "sessions": sessions, "stores_visited": cnt})
     conn.close()
     return result
+
+
+def get_my_visits(agent, work_date):
+    """Bitta agentning shu kungi tashriflari (o'zi ko'rishi uchun)."""
+    init_db()
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT store, score, created_at, needs_review FROM visits "
+        "WHERE agent=? AND visit_date=? ORDER BY id DESC", (agent, work_date)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 def replace_all_stores(rows):

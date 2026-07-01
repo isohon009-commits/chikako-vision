@@ -124,7 +124,8 @@ function setFilter(f){
 
 async function load(){
   try{
-    const today = new Date().toISOString().slice(0,10);
+    const now = new Date();
+    const today = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
     const [stats, visits, attendance] = await Promise.all([
       fetch("/stats").then(r=>r.json()),
       fetch("/visits" + (filter==="susp" ? "?suspicious=true" : "")).then(r=>r.json()),
@@ -148,15 +149,18 @@ function renderAttendance(rows){
   el.innerHTML =
     '<div style="font-size:14px;font-weight:600;margin-bottom:10px">Bugungi agentlar</div>' +
     '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">' +
-    rows.map(r=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)">
+    rows.map(r=>{
+      const sess = (r.sessions||[]).map(s=>
+        `${s.start_time||'—'}–${s.end_time||'...'}`).join(", ");
+      return `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap">
         <div style="font-weight:600;font-size:14px">${esc(r.agent)}</div>
-        <div style="display:flex;gap:16px;font-size:13px;color:var(--muted)">
-          <span>Boshladi: <b style="color:var(--ink)">${esc(r.start_time||'—')}</b></span>
-          <span>Tugatdi: <b style="color:var(--ink)">${esc(r.end_time||'—')}</b></span>
+        <div style="display:flex;gap:16px;font-size:13px;color:var(--muted);align-items:center">
+          <span>Seanslar: <b style="color:var(--ink)">${esc(sess)}</b></span>
           <span>Do'konlar: <b style="color:var(--ink)">${r.stores_visited}</b></span>
         </div>
-      </div>`).join("") +
+      </div>`;
+    }).join("") +
     '</div>';
 }
 

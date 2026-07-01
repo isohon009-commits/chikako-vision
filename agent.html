@@ -19,7 +19,7 @@
   .screen.active{display:flex}
   label{font-size:13px;color:var(--muted);font-weight:500;margin-bottom:6px;display:block}
   input,select{width:100%;border:1px solid var(--border);border-radius:10px;padding:13px;
-    font-size:16px;font-family:var(--body);margin-bottom:16px;background:var(--surface)}
+    font-size:16px;font-family:var(--body);margin-bottom:12px;background:var(--surface)}
   input:focus,select:focus{outline:none;border-color:var(--red)}
   .btn{background:var(--red);color:#fff;border:none;border-radius:10px;padding:15px;
     font-size:16px;font-weight:600;font-family:var(--body);width:100%;cursor:pointer}
@@ -27,12 +27,19 @@
   .btn:disabled{background:#ccc}
   .btn-ghost{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
   .btn-green{background:var(--green)}
+  .btn-sm{padding:9px 12px;font-size:13px;width:auto;border-radius:8px}
   .title{font-size:18px;font-weight:600;margin-bottom:6px}
   .who{font-size:13px;color:var(--muted);margin-bottom:16px}
-  .worknote{font-size:13px;background:#E6F4EC;color:var(--green);padding:10px 12px;
-    border-radius:10px;margin-bottom:16px;text-align:center}
-  .photo-box{border:2px dashed var(--border);border-radius:14px;padding:36px 16px;text-align:center;
-    margin-bottom:14px;cursor:pointer;background:var(--surface)}
+  .toprow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .worknote{font-size:13px;background:#E6F4EC;color:var(--green);padding:10px 12px;border-radius:10px;margin-bottom:16px;text-align:center}
+  .store-results{border:1px solid var(--border);border-radius:10px;max-height:240px;overflow-y:auto;margin-bottom:14px;background:var(--surface)}
+  .store-item{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;font-size:15px}
+  .store-item:last-child{border-bottom:none}
+  .store-item:active{background:var(--bg)}
+  .store-item .dist{font-size:12px;color:var(--muted);margin-left:6px}
+  .selected-store{background:#E6F4EC;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+  .selected-store .nm{font-weight:600;font-size:15px}
+  .photo-box{border:2px dashed var(--border);border-radius:14px;padding:36px 16px;text-align:center;margin-bottom:14px;cursor:pointer;background:var(--surface)}
   .photo-box.locked{opacity:.5;cursor:not-allowed}
   .photo-box .ic{font-size:40px;color:var(--red)}
   .photo-box .tx{font-size:14px;color:var(--muted);margin-top:8px}
@@ -52,6 +59,13 @@
   .spacer{flex:1}
   .loading{text-align:center;color:var(--muted);padding:30px;font-size:15px}
   .endbtn{margin-top:14px}
+  .link{color:var(--red);font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;background:none;border:none}
+  .visit-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+  .visit-item .nm{font-weight:600;font-size:14px}
+  .visit-item .tm{font-size:12px;color:var(--muted)}
+  .badge{font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px}
+  .badge.clean{background:#E6F4EC;color:var(--green)}
+  .badge.susp{background:#FBEEDA;color:var(--amber)}
 </style>
 </head>
 <body>
@@ -70,28 +84,37 @@
 
 <!-- 2. TASHRIF -->
 <div class="screen" id="visitScreen">
-  <div class="title">Yangi tashrif</div>
-  <div class="who" id="whoText"></div>
+  <div class="toprow">
+    <div><div class="title">Yangi tashrif</div><div class="who" id="whoText"></div></div>
+    <button class="link" onclick="openMyVisits()">Bugungi tashriflarim</button>
+  </div>
 
   <button class="btn btn-green" id="startBtn" onclick="startWork()">Ishni boshlash</button>
   <div class="worknote" id="workNote" style="display:none"></div>
 
   <div id="visitForm" style="display:none">
-    <label>Do'kon</label>
-    <select id="storeSelect" onchange="storeChanged()">
-      <option value="">— Do'konni tanlang —</option>
-    </select>
+    <!-- do'kon tanlanmagan -->
+    <div id="storePick">
+      <label>Do'kon (nom yozib qidiring)</label>
+      <input type="text" id="storeSearch" placeholder="Do'kon nomini yozing..." oninput="filterStores()">
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:12px" onclick="showNearest()">📍 Eng yaqin do'konlar</button>
+      <div class="store-results" id="storeResults" style="display:none"></div>
+    </div>
+    <!-- do'kon tanlangan -->
+    <div class="selected-store" id="selectedStore" style="display:none">
+      <div class="nm" id="selectedName"></div>
+      <button class="link" onclick="changeStore()">O'zgartirish</button>
+    </div>
 
-    <div class="geo wait" id="geoStatus">📍 GPS aniqlanmoqda...</div>
+    <div class="geo wait" id="geoStatus" style="display:none">📍 GPS aniqlanmoqda...</div>
 
-    <label>Polka rasmi</label>
-    <div class="photo-box locked" id="photoBox" onclick="tryPhoto()">
-      <div class="ic">&#128247;</div>
-      <div class="tx">Avval do'konga boring</div>
+    <label id="photoLabel" style="display:none">Polka rasmi</label>
+    <div class="photo-box locked" id="photoBox" onclick="tryPhoto()" style="display:none">
+      <div class="ic">&#128247;</div><div class="tx">Avval do'konga boring</div>
     </div>
     <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="photoPicked(event)">
 
-    <button class="btn" id="submitBtn" onclick="submitVisit()" disabled>Yuborish</button>
+    <button class="btn" id="submitBtn" onclick="submitVisit()" disabled style="display:none">Yuborish</button>
     <button class="btn btn-ghost endbtn" onclick="endWork()">Ishni tugatish</button>
   </div>
 </div>
@@ -103,19 +126,30 @@
   <button class="btn" onclick="newVisit()">Yangi tashrif</button>
 </div>
 
+<!-- 4. BUGUNGI TASHRIFLARIM -->
+<div class="screen" id="myVisitsScreen">
+  <div class="toprow">
+    <div class="title">Bugungi tashriflarim</div>
+    <button class="link" onclick="showScreen('visitScreen')">← Orqaga</button>
+  </div>
+  <div id="myVisitsList" style="margin-top:10px"></div>
+</div>
+
 <!-- YUKLANMOQDA -->
 <div class="screen" id="loadingScreen">
   <div class="loading"><div style="font-size:40px;margin-bottom:12px">&#9203;</div>Yuborilmoqda va tekshirilmoqda...</div>
 </div>
 
 <script>
-const RADIUS = 150; // metr — do'konga shu masofagacha yaqin bo'lsa rasm olinadi
+const RADIUS = 150;
 let agent = {name:"", phone:""};
 let photoFile = null;
 let gps = {lat:null, lng:null};
 let stores = [];
 let selectedStore = null;
 let inGeofence = false;
+
+function today(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 
 const saved = localStorage.getItem("chikako_agent");
 if(saved){ agent = JSON.parse(saved); goVisit(); }
@@ -132,45 +166,21 @@ function login(){
 async function goVisit(){
   document.getElementById("whoText").textContent = agent.name + " · " + (agent.phone||"");
   showScreen("visitScreen");
-  // ish boshlanganmi bugun?
-  const today = new Date().toISOString().slice(0,10);
   const ws = localStorage.getItem("chikako_workdate");
-  if(ws === today){ showWorkStarted(localStorage.getItem("chikako_starttime")||""); }
+  if(ws === today()){ showWorkStarted(localStorage.getItem("chikako_starttime")||""); }
   await loadStores();
   getGPS();
 }
 
 async function loadStores(){
-  try{
-    stores = await fetch("/stores").then(r=>r.json());
-  }catch(e){ stores = []; }
-  refreshStoreOptions();
-}
-
-function refreshStoreOptions(){
-  const sel = document.getElementById("storeSelect");
-  if(selectedStore) return; // tanlangan bo'lsa, ro'yxatni buzmaymiz
-  let list = stores;
-  let nearby = false;
-  if(gps.lat && stores.length){
-    const withD = stores.map(s=>({...s, d: distance(gps.lat,gps.lng,s.lat,s.lng)}));
-    const close = withD.filter(s=>s.d <= 3000).sort((a,b)=>a.d-b.d);
-    if(close.length){ list = close; nearby = true; }
-    else { list = withD.sort((a,b)=>a.d-b.d).slice(0,50); }
-  }
-  sel.innerHTML = '<option value="">— Do\'konni tanlang —</option>' +
-    list.map(s=>{
-      const lbl = nearby ? `${s.name} (${Math.round(s.d)} m)` : s.name;
-      return `<option value="${s.id}">${lbl}</option>`;
-    }).join("");
+  try{ stores = await fetch("/stores").then(r=>r.json()); }catch(e){ stores = []; }
 }
 
 async function startWork(){
-  const today = new Date().toISOString().slice(0,10);
-  const fd = new FormData(); fd.append("agent",agent.name); fd.append("date",today);
+  const fd = new FormData(); fd.append("agent",agent.name); fd.append("date",today());
   try{
     const r = await fetch("/attendance/start",{method:"POST",body:fd}).then(r=>r.json());
-    localStorage.setItem("chikako_workdate",today);
+    localStorage.setItem("chikako_workdate",today());
     localStorage.setItem("chikako_starttime",r.start_time);
     showWorkStarted(r.start_time);
   }catch(e){ alert("Xato, qayta urinib ko'ring"); }
@@ -179,15 +189,13 @@ async function startWork(){
 function showWorkStarted(time){
   document.getElementById("startBtn").style.display = "none";
   const n = document.getElementById("workNote");
-  n.style.display = "block";
-  n.textContent = "Ish boshlandi: " + time;
+  n.style.display = "block"; n.textContent = "Ish boshlandi: " + time;
   document.getElementById("visitForm").style.display = "block";
 }
 
 async function endWork(){
   if(!confirm("Ishni tugatasizmi?")) return;
-  const today = new Date().toISOString().slice(0,10);
-  const fd = new FormData(); fd.append("agent",agent.name); fd.append("date",today);
+  const fd = new FormData(); fd.append("agent",agent.name); fd.append("date",today());
   try{
     const r = await fetch("/attendance/end",{method:"POST",body:fd}).then(r=>r.json());
     localStorage.removeItem("chikako_workdate");
@@ -199,18 +207,12 @@ async function endWork(){
 }
 
 function getGPS(){
-  if(!navigator.geolocation){ setGeo("bad","GPS qo'llab-quvvatlanmaydi"); return; }
+  if(!navigator.geolocation){ return; }
   navigator.geolocation.watchPosition(
-    pos => { gps.lat=pos.coords.latitude; gps.lng=pos.coords.longitude; refreshStoreOptions(); checkGeofence(); },
+    pos => { gps.lat=pos.coords.latitude; gps.lng=pos.coords.longitude; checkGeofence(); },
     err => { setGeo("bad","GPS ruxsati berilmadi"); },
     {enableHighAccuracy:true, timeout:15000, maximumAge:5000}
   );
-}
-
-function storeChanged(){
-  const id = document.getElementById("storeSelect").value;
-  selectedStore = stores.find(s=>String(s.id)===id) || null;
-  checkGeofence();
 }
 
 function distance(lat1,lng1,lat2,lng2){
@@ -220,17 +222,65 @@ function distance(lat1,lng1,lat2,lng2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
+function filterStores(){
+  const q = document.getElementById("storeSearch").value.trim().toLowerCase();
+  const box = document.getElementById("storeResults");
+  if(!q){ box.style.display="none"; return; }
+  const matches = stores.filter(s=>s.name.toLowerCase().includes(q)).slice(0,30);
+  renderStoreList(matches, false);
+}
+
+function showNearest(){
+  const box = document.getElementById("storeResults");
+  if(!gps.lat){ alert("GPS hali aniqlanmadi, biroz kuting"); return; }
+  const withD = stores.map(s=>({...s, d: distance(gps.lat,gps.lng,s.lat,s.lng)}))
+    .sort((a,b)=>a.d-b.d).slice(0,15);
+  renderStoreList(withD, true);
+}
+
+function renderStoreList(list, showDist){
+  const box = document.getElementById("storeResults");
+  if(!list.length){ box.innerHTML='<div class="store-item">Topilmadi</div>'; box.style.display="block"; return; }
+  box.innerHTML = list.map(s=>
+    `<div class="store-item" onclick="pickStore(${s.id})">${esc(s.name)}`+
+    (showDist ? `<span class="dist">${Math.round(s.d)} m</span>` : '')+`</div>`).join("");
+  box.style.display = "block";
+}
+
+function pickStore(id){
+  selectedStore = stores.find(s=>s.id===id);
+  document.getElementById("storePick").style.display = "none";
+  document.getElementById("storeResults").style.display = "none";
+  document.getElementById("selectedStore").style.display = "flex";
+  document.getElementById("selectedName").textContent = selectedStore.name;
+  document.getElementById("geoStatus").style.display = "flex";
+  document.getElementById("photoLabel").style.display = "block";
+  document.getElementById("photoBox").style.display = "block";
+  document.getElementById("submitBtn").style.display = "block";
+  checkGeofence();
+}
+
+function changeStore(){
+  selectedStore = null;
+  document.getElementById("storePick").style.display = "block";
+  document.getElementById("selectedStore").style.display = "none";
+  document.getElementById("geoStatus").style.display = "none";
+  document.getElementById("photoLabel").style.display = "none";
+  document.getElementById("photoBox").style.display = "none";
+  document.getElementById("submitBtn").style.display = "none";
+  document.getElementById("storeSearch").value = "";
+}
+
 function checkGeofence(){
-  const el = document.getElementById("geoStatus");
+  if(!selectedStore) return;
   const box = document.getElementById("photoBox");
   if(!gps.lat){ setGeo("wait","📍 GPS aniqlanmoqda..."); inGeofence=false; lockPhoto(); return; }
-  if(!selectedStore){ setGeo("wait","📍 Do'konni tanlang"); inGeofence=false; lockPhoto(); return; }
   const d = Math.round(distance(gps.lat,gps.lng,selectedStore.lat,selectedStore.lng));
   if(d <= RADIUS){
     inGeofence = true;
     setGeo("ok","✓ Do'kondasiz ("+d+" m) — rasm olishingiz mumkin");
     box.classList.remove("locked");
-    box.querySelector(".tx").textContent = "Rasm olish uchun bosing";
+    if(!photoFile) box.querySelector(".tx").textContent = "Rasm olish uchun bosing";
   } else {
     inGeofence = false;
     setGeo("bad","✗ Do'kondan "+d+" m uzoqda — yaqinroq boring");
@@ -243,8 +293,7 @@ function lockPhoto(){
   box.classList.add("locked");
   if(!photoFile) box.querySelector(".tx").textContent = "Avval do'konga boring";
 }
-
-function setGeo(cls,txt){ const el=document.getElementById("geoStatus"); el.className="geo "+cls; el.textContent=txt; }
+function setGeo(cls,txt){ const el=document.getElementById("geoStatus"); el.className="geo "+cls; el.style.display="flex"; el.textContent=txt; }
 
 function tryPhoto(){
   if(!inGeofence){ alert("Rasm olish uchun do'kon joyiga boring"); return; }
@@ -267,13 +316,10 @@ async function submitVisit(){
   showScreen("loadingScreen");
   const fd = new FormData();
   fd.append("file", photoFile);
-  fd.append("photo_lat", gps.lat);
-  fd.append("photo_lng", gps.lng);
-  fd.append("store_lat", selectedStore.lat);
-  fd.append("store_lng", selectedStore.lng);
-  fd.append("agent", agent.name);
-  fd.append("store", selectedStore.name);
-  fd.append("date", new Date().toISOString().slice(0,10));
+  fd.append("photo_lat", gps.lat); fd.append("photo_lng", gps.lng);
+  fd.append("store_lat", selectedStore.lat); fd.append("store_lng", selectedStore.lng);
+  fd.append("agent", agent.name); fd.append("store", selectedStore.name);
+  fd.append("date", today());
   try{
     const res = await fetch("/verify", {method:"POST", body:fd});
     if(!res.ok){
@@ -305,21 +351,37 @@ function showResult(data){
 
 function newVisit(){
   photoFile = null;
-  document.getElementById("storeSelect").value = "";
   selectedStore = null;
   const box = document.getElementById("photoBox");
   box.innerHTML = '<div class="ic">&#128247;</div><div class="tx">Avval do\'konga boring</div>';
   box.classList.add("locked");
   document.getElementById("fileInput").value = "";
   document.getElementById("submitBtn").disabled = true;
+  changeStore();
   showScreen("visitScreen");
-  checkGeofence();
+}
+
+async function openMyVisits(){
+  showScreen("myVisitsScreen");
+  const el = document.getElementById("myVisitsList");
+  el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">Yuklanmoqda...</div>';
+  try{
+    const rows = await fetch("/my-visits?agent="+encodeURIComponent(agent.name)+"&date="+today()).then(r=>r.json());
+    if(!rows.length){ el.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">Bugun hali tashrif yo\'q.</div>'; return; }
+    el.innerHTML = '<div style="font-size:13px;color:var(--muted);margin-bottom:10px">Bugun '+rows.length+' ta tashrif</div>' +
+      rows.map(r=>`
+      <div class="visit-item">
+        <div><div class="nm">${esc(r.store)}</div><div class="tm">${esc(r.created_at||'')}</div></div>
+        <span class="badge ${r.needs_review?'susp':'clean'}">${r.needs_review?'Shubhali':(r.score!=null?r.score+'/10':'Toza')}</span>
+      </div>`).join("");
+  }catch(e){ el.innerHTML='<div style="color:var(--danger);text-align:center;padding:20px">Yuklab bo\'lmadi</div>'; }
 }
 
 function showScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 }
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 </script>
 </body>
 </html>

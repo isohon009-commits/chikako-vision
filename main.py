@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse
 from analyzer import analyze_image_bytes
 from verify import verify_visit
 from database import (get_visits, get_stats, get_stores, add_store, delete_store,
-                      start_work, end_work, get_attendance)
+                      start_work, end_work, get_attendance, get_my_visits)
 
 app = FastAPI(title="Chikako Vision API")
 
@@ -133,6 +133,11 @@ async def attendance_end(agent: str = Form(...), date: str = Form(...)):
 @app.get("/attendance")
 def attendance_list(date: str):
     return get_attendance(date)
+
+
+@app.get("/my-visits")
+def my_visits(agent: str, date: str):
+    return get_my_visits(agent, date)
 
 
 @app.get("/stats")
