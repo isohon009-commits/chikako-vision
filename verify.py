@@ -16,7 +16,7 @@ from database import save_visit
 
 def verify_visit(image_path, photo_lat=None, photo_lng=None,
                  store_lat=None, store_lng=None,
-                 agent="", store="", date="", save=True):
+                 agent="", store="", date="", save=True, photo_file=None):
     """Bitta tashrifni to'liq tekshiradi, bazaga saqlaydi va xulosa qaytaradi."""
 
     flags = []   # shubhali sabablar ro'yxati
@@ -60,6 +60,6 @@ def verify_visit(image_path, photo_lat=None, photo_lng=None,
     # Bazaga saqlash
     if save:
         save_visit(result, agent=agent, store=store, visit_date=date,
-                   photo_lat=photo_lat, photo_lng=photo_lng)
+                   photo_lat=photo_lat, photo_lng=photo_lng, photo_file=photo_file)
 
     return result

@@ -58,14 +58,15 @@ def init_db():
     # Eski bazaga yangi ustunlarni qo'shish (avtomatik migratsiya)
     existing = [r[1] for r in conn.execute("PRAGMA table_info(visits)").fetchall()]
     for col, typ in [("photo_lat", "REAL"), ("photo_lng", "REAL"),
-                     ("gps_distance", "REAL"), ("is_duplicate", "INTEGER")]:
+                     ("gps_distance", "REAL"), ("is_duplicate", "INTEGER"),
+                     ("photo_file", "TEXT")]:
         if col not in existing:
             conn.execute(f"ALTER TABLE visits ADD COLUMN {col} {typ}")
     conn.commit()
     conn.close()
 
 
-def save_visit(result, agent="", store="", visit_date="", photo_lat=None, photo_lng=None):
+def save_visit(result, agent="", store="", visit_date="", photo_lat=None, photo_lng=None, photo_file=None):
     """verify_visit() natijasini bazaga yozadi."""
     init_db()
     v = result.get("vision", {})
@@ -76,8 +77,8 @@ def save_visit(result, agent="", store="", visit_date="", photo_lat=None, photo_
     conn.execute("""
         INSERT INTO visits (created_at, agent, store, visit_date, needs_review,
             flags, score, share, facings, brand_found, real_shelf,
-            gps_distance, photo_lat, photo_lng, is_duplicate, summary)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            gps_distance, photo_lat, photo_lng, is_duplicate, summary, photo_file)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     """, (
         now_uz().strftime("%Y-%m-%d %H:%M"),
         agent, store, visit_date,
@@ -92,13 +93,14 @@ def save_visit(result, agent="", store="", visit_date="", photo_lat=None, photo_
         photo_lat, photo_lng,
         1 if dup.get("is_duplicate") else 0,
         v.get("summary_uz", ""),
+        photo_file,
     ))
     conn.commit()
     conn.close()
 
 
-def get_visits(only_suspicious=False, agent=None):
-    """Tashriflar ro'yxatini qaytaradi (eng yangisi birinchi)."""
+def get_visits(only_suspicious=False, agent=None, store=None, date=None):
+    """Tashriflar ro'yxatini qaytaradi (eng yangisi birinchi). Filtrlar ixtiyoriy."""
     init_db()
     conn = get_conn()
     q = "SELECT * FROM visits"
@@ -106,8 +108,11 @@ def get_visits(only_suspicious=False, agent=None):
     if only_suspicious:
         conds.append("needs_review = 1")
     if agent:
-        conds.append("agent = ?")
-        params.append(agent)
+        conds.append("agent = ?"); params.append(agent)
+    if store:
+        conds.append("store = ?"); params.append(store)
+    if date:
+        conds.append("visit_date = ?"); params.append(date)
     if conds:
         q += " WHERE " + " AND ".join(conds)
     q += " ORDER BY id DESC"
@@ -121,14 +126,16 @@ def get_visits(only_suspicious=False, agent=None):
     return result
 
 
-def get_stats():
-    """Umumiy statistika — panel tepasidagi raqamlar uchun."""
+def get_stats(date=None):
+    """Statistika. date berilsa, o'sha kun bo'yicha."""
     init_db()
     conn = get_conn()
-    total = conn.execute("SELECT COUNT(*) FROM visits").fetchone()[0]
-    suspicious = conn.execute("SELECT COUNT(*) FROM visits WHERE needs_review = 1").fetchone()[0]
-    avg_score = conn.execute("SELECT AVG(score) FROM visits").fetchone()[0]
-    agents = conn.execute("SELECT COUNT(DISTINCT agent) FROM visits").fetchone()[0]
+    where = " WHERE visit_date = ?" if date else ""
+    p = (date,) if date else ()
+    total = conn.execute("SELECT COUNT(*) FROM visits"+where, p).fetchone()[0]
+    suspicious = conn.execute("SELECT COUNT(*) FROM visits"+where+(" AND" if date else " WHERE")+" needs_review = 1", p).fetchone()[0]
+    avg_score = conn.execute("SELECT AVG(score) FROM visits"+where, p).fetchone()[0]
+    agents = conn.execute("SELECT COUNT(DISTINCT agent) FROM visits"+where, p).fetchone()[0]
     conn.close()
     return {
         "total": total,
@@ -137,6 +144,15 @@ def get_stats():
         "avg_score": round(avg_score, 1) if avg_score else 0,
         "agents": agents,
     }
+
+
+def get_agents():
+    """Barcha agent nomlari (filtr uchun)."""
+    init_db()
+    conn = get_conn()
+    rows = conn.execute("SELECT DISTINCT agent FROM visits WHERE agent != '' ORDER BY agent").fetchall()
+    conn.close()
+    return [r[0] for r in rows]
 
 
 # ============== DO'KONLAR BAZASI (A) ==============

@@ -108,13 +108,38 @@
   <div class="filters">
     <button class="tab active" data-f="all" onclick="setFilter('all')">Hammasi</button>
     <button class="tab flag" data-f="susp" onclick="setFilter('susp')">Shubhali</button>
+    <input type="date" id="dateFilter" onchange="load()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:var(--body);font-size:14px">
+    <select id="agentFilter" onchange="load()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:var(--body);font-size:14px;background:var(--surface)">
+      <option value="">Barcha agentlar</option>
+    </select>
+    <button class="tab" onclick="clearFilters()">Tozalash</button>
   </div>
 
   <div id="list"><div class="loading">Yuklanmoqda...</div></div>
 </div>
 
+<!-- Rasm lightbox -->
+<div id="lightbox" onclick="closeLightbox()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;align-items:center;justify-content:center;padding:20px">
+  <img id="lightboxImg" style="max-width:100%;max-height:100%;border-radius:8px" alt="polka">
+</div>
+
 <script>
 let filter = "all";
+let agentsLoaded = false;
+
+function clearFilters(){
+  document.getElementById("dateFilter").value = "";
+  document.getElementById("agentFilter").value = "";
+  filter = "all";
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.f==="all"));
+  load();
+}
+
+function openLightbox(src){
+  document.getElementById("lightboxImg").src = src;
+  document.getElementById("lightbox").style.display = "flex";
+}
+function closeLightbox(){ document.getElementById("lightbox").style.display = "none"; }
 
 function setFilter(f){
   filter = f;
@@ -122,14 +147,38 @@ function setFilter(f){
   load();
 }
 
+async function loadAgents(){
+  if(agentsLoaded) return;
+  try{
+    const agents = await fetch("/agents").then(r=>r.json());
+    const sel = document.getElementById("agentFilter");
+    sel.innerHTML = '<option value="">Barcha agentlar</option>' +
+      agents.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join("");
+    agentsLoaded = true;
+  }catch(e){}
+}
+
 async function load(){
   try{
+    loadAgents();
     const now = new Date();
-    const today = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    const todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    const dateVal = document.getElementById("dateFilter") ? document.getElementById("dateFilter").value : "";
+    const agentVal = document.getElementById("agentFilter") ? document.getElementById("agentFilter").value : "";
+
+    // Query qurish
+    const params = [];
+    if(filter==="susp") params.push("suspicious=true");
+    if(dateVal) params.push("date="+dateVal);
+    if(agentVal) params.push("agent="+encodeURIComponent(agentVal));
+    const vq = params.length ? "?"+params.join("&") : "";
+    const sq = dateVal ? "?date="+dateVal : "";
+    const attDate = dateVal || todayStr;
+
     const [stats, visits, attendance] = await Promise.all([
-      fetch("/stats").then(r=>r.json()),
-      fetch("/visits" + (filter==="susp" ? "?suspicious=true" : "")).then(r=>r.json()),
-      fetch("/attendance?date="+today).then(r=>r.json())
+      fetch("/stats"+sq).then(r=>r.json()),
+      fetch("/visits"+vq).then(r=>r.json()),
+      fetch("/attendance?date="+attDate).then(r=>r.json())
     ]);
     renderStats(stats);
     renderAttendance(attendance);
@@ -187,10 +236,15 @@ function renderVisits(visits){
     const gpsHtml = (v.photo_lat && v.photo_lng)
       ? `<a href="https://maps.google.com/?q=${v.photo_lat},${v.photo_lng}" target="_blank" style="font-size:12px;color:var(--muted);text-decoration:none;display:inline-block;margin-top:8px">📍 Rasm olingan joyni ko'rish</a>`
       : "";
+    const photoUrl = v.photo_file ? "/photos/"+v.photo_file : "";
+    const thumbHtml = photoUrl
+      ? `<img src="${photoUrl}" alt="polka" onclick="openLightbox('${photoUrl}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px;cursor:pointer;flex-shrink:0;border:1px solid var(--border)">`
+      : "";
     return `
     <div class="visit ${susp?'susp':''}">
       <div class="visit-top">
         <div class="who">
+          ${thumbHtml}
           <span class="badge ${susp?'susp':'clean'}">${susp?'Shubhali':'Toza'}</span>
           <div class="who-text">
             <div class="agent">${esc(v.agent||'—')}</div>

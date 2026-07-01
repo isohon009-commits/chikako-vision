@@ -10,17 +10,21 @@ Endpointlar:
 """
 
 import os
+import time
 import tempfile
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse
 from analyzer import analyze_image_bytes
 from verify import verify_visit
 from database import (get_visits, get_stats, get_stores, add_store, delete_store,
-                      start_work, end_work, get_attendance, get_my_visits)
+                      start_work, end_work, get_attendance, get_my_visits, get_agents)
 
 app = FastAPI(title="Chikako Vision API")
 
 HERE = os.path.dirname(__file__)
+DATA_DIR = os.environ.get("DATA_DIR", HERE)
+PHOTO_DIR = os.path.join(DATA_DIR, "photos")
+os.makedirs(PHOTO_DIR, exist_ok=True)
 
 
 @app.get("/")
@@ -141,13 +145,29 @@ def my_visits(agent: str, date: str):
 
 
 @app.get("/stats")
-def stats():
-    return get_stats()
+def stats(date: str = None):
+    return get_stats(date=date)
 
 
 @app.get("/visits")
-def visits(suspicious: bool = False, agent: str = None):
-    return get_visits(only_suspicious=suspicious, agent=agent)
+def visits(suspicious: bool = False, agent: str = None, store: str = None, date: str = None):
+    return get_visits(only_suspicious=suspicious, agent=agent, store=store, date=date)
+
+
+@app.get("/agents")
+def agents_list():
+    return get_agents()
+
+
+@app.get("/photos/{filename}")
+def get_photo(filename: str):
+    """Saqlangan polka rasmini ko'rsatadi."""
+    # xavfsizlik: faqat fayl nomi, yo'l emas
+    safe = os.path.basename(filename)
+    path = os.path.join(PHOTO_DIR, safe)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Rasm topilmadi")
+    return FileResponse(path)
 
 
 @app.post("/analyze")
@@ -179,20 +199,21 @@ async def verify(
 
     image_bytes = await file.read()
     suffix = ".png" if file.content_type == "image/png" else ".jpg"
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-    tmp.write(image_bytes)
-    tmp.close()
+
+    # Rasmni doimiy saqlaymiz (panelda ko'rsatish uchun)
+    fname = f"{int(time.time()*1000)}{suffix}"
+    fpath = os.path.join(PHOTO_DIR, fname)
+    with open(fpath, "wb") as f:
+        f.write(image_bytes)
 
     try:
         result = verify_visit(
-            tmp.name,
+            fpath,
             photo_lat=photo_lat, photo_lng=photo_lng,
             store_lat=store_lat, store_lng=store_lng,
-            agent=agent, store=store, date=date,
+            agent=agent, store=store, date=date, photo_file=fname,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Tekshiruv xatosi: {e}")
-    finally:
-        os.unlink(tmp.name)
 
     return result
